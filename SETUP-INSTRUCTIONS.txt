@@ -1,0 +1,320 @@
+================================================================================
+                    PODCASTDAILY - SETUP INSTRUCTIONS
+================================================================================
+
+This file contains step-by-step instructions for setting up and running
+the PodcastDaily application from scratch.
+
+================================================================================
+                        PREREQUISITES
+================================================================================
+
+Before you begin, make sure you have:
+- Node.js 20+ installed
+- Git installed
+- A GitHub account (already done - repo created)
+- Terminal/Command prompt access
+
+================================================================================
+                    STEP 1: CLONE THE REPOSITORY
+================================================================================
+
+If you're on a new machine or working with others:
+
+    git clone https://github.com/venkat-the-coder/podcast-daily.git
+    cd podcast-daily
+
+If you're already in the project directory, skip this step.
+
+================================================================================
+                    STEP 2: INSTALL DEPENDENCIES
+================================================================================
+
+Run the following command in the project root:
+
+    npm install
+
+This will install all required packages including:
+- Next.js, React, TypeScript
+- Convex (backend)
+- Clerk (authentication)
+- OpenAI, ElevenLabs (AI services)
+- Tailwind CSS (styling)
+- And all other dependencies
+
+Expected output: "added XXX packages" with no errors
+
+================================================================================
+                    STEP 3: INITIALIZE CONVEX (REQUIRED)
+================================================================================
+
+This is the MOST IMPORTANT step. Nothing will work without this.
+
+Run:
+
+    npx convex dev
+
+What will happen:
+1. You'll be prompted to log in to Convex
+2. Browser will open for authentication
+3. Choose "Create a new project" when prompted
+4. Convex will generate the _generated folder
+5. A .env.local file will be created automatically with:
+   - CONVEX_DEPLOYMENT=dev:xxxxx
+   - NEXT_PUBLIC_CONVEX_URL=https://xxxxx.convex.cloud
+
+IMPORTANT: Keep this terminal window open! The Convex dev server needs to run.
+
+Expected result:
+- You'll see: "Convex functions ready!"
+- The convex/_generated folder will be created
+- .env.local file will contain Convex environment variables
+
+================================================================================
+                    STEP 4: SET UP CLERK AUTHENTICATION
+================================================================================
+
+4.1 Create a Clerk Account
+    - Go to: https://clerk.com
+    - Sign up for a free account
+    - Click "Add application"
+    - Name it: "PodcastDaily"
+    - Select "Email" as authentication method
+    - Click "Create application"
+
+4.2 Get Your Clerk Keys
+    - You'll see your keys on the dashboard
+    - Copy the "Publishable key" (starts with pk_test_)
+    - Copy the "Secret key" (starts with sk_test_)
+
+4.3 Create JWT Template for Convex
+    - In Clerk dashboard, go to: JWT Templates
+    - Click "New template"
+    - Select "Convex" from the list
+    - Click "Create"
+    - You'll see the Issuer URL - keep this handy
+
+4.4 Add Clerk Keys to .env.local
+    Open the .env.local file (it was created by Convex)
+    Add these lines:
+
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY_HERE
+    CLERK_SECRET_KEY=sk_test_YOUR_KEY_HERE
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/onboarding
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
+
+    Replace YOUR_KEY_HERE with your actual keys.
+
+4.5 Configure Clerk Webhook (for user sync)
+    - In Clerk dashboard, go to: Webhooks
+    - Click "Add Endpoint"
+    - Endpoint URL: https://YOUR-CONVEX-DEPLOYMENT.convex.site/clerk-webhook
+      (Get YOUR-CONVEX-DEPLOYMENT from your Convex dashboard)
+    - Select events: user.created, user.updated
+    - Click "Create"
+
+Expected result:
+- .env.local now has all Clerk variables
+- Clerk webhook is configured
+
+================================================================================
+                    STEP 5: SET UP AI SERVICE KEYS
+================================================================================
+
+You need accounts and API keys from OpenAI and ElevenLabs.
+
+5.1 OpenAI Setup
+    - Go to: https://platform.openai.com
+    - Sign up or log in
+    - Go to: API Keys section
+    - Click "Create new secret key"
+    - Copy the key (starts with sk-)
+    - IMPORTANT: Store it safely, you can't see it again!
+
+5.2 ElevenLabs Setup
+    - Go to: https://elevenlabs.io
+    - Sign up or log in
+    - Go to: Profile → API Keys
+    - Copy your API key
+    - Go to: Voices → Select a voice you like
+    - Copy the Voice ID (you'll see it when you click a voice)
+
+5.3 Add AI Keys to Convex Environment
+    Run these commands (replace with your actual keys):
+
+    npx convex env set OPENAI_API_KEY sk-YOUR_OPENAI_KEY
+    npx convex env set ELEVENLABS_API_KEY YOUR_ELEVENLABS_KEY
+    npx convex env set ELEVENLABS_VOICE_ID YOUR_VOICE_ID
+
+    NOTE: These are stored securely in Convex, NOT in .env.local
+
+Expected result:
+- You'll see "Set OPENAI_API_KEY" confirmation messages
+- Keys are now available to your Convex functions
+
+================================================================================
+                    STEP 6: SEED NEWS SOURCES DATABASE
+================================================================================
+
+The app needs news sources to fetch articles from.
+
+6.1 Open Convex Dashboard
+    - Go to: https://dashboard.convex.dev
+    - Select your project
+    - Go to: Functions tab
+
+6.2 Run the Seed Mutation
+    - Find "sources.seedNewsSources" in the functions list
+    - Click on it
+    - Click "Run" (no arguments needed)
+    - You should see: "count: 7, message: News sources seeded successfully"
+
+Expected result:
+- 7 news sources added (BBC, CNN, TechCrunch, The Verge, etc.)
+- You can view them in the "Data" tab under "newsSources" table
+
+================================================================================
+                    STEP 7: RUN THE APPLICATION
+================================================================================
+
+Now you're ready to run the app!
+
+7.1 Make sure Convex dev server is still running
+    - If you closed it, run: npx convex dev
+
+7.2 In a NEW terminal window, start Next.js:
+
+    npm run dev
+
+7.3 Open your browser and go to:
+
+    http://localhost:3000
+
+Expected result:
+- Landing page loads successfully
+- You can click "Get Started" to sign up
+- Authentication works
+- You can select news sources in onboarding
+- Dashboard shows your episodes
+
+================================================================================
+                    STEP 8: TEST THE APPLICATION
+================================================================================
+
+8.1 Sign Up
+    - Click "Get Started" on landing page
+    - Enter email and password
+    - Complete Clerk signup flow
+
+8.2 Onboarding
+    - Select 2-3 news sources
+    - Click "Continue"
+    - First episode generation will start
+
+8.3 Dashboard
+    - Wait for episode to generate (may take 1-2 minutes)
+    - Status will change: pending → generating_script → generating_audio → completed
+    - When completed, you can play the audio
+
+8.4 Generate Another Episode
+    - Click "Generate Episode" button
+    - Free tier: limited to 1/day
+    - Watch the progress in real-time
+
+================================================================================
+                    TROUBLESHOOTING
+================================================================================
+
+Problem: Build fails with "Module not found: @/convex/_generated/api"
+Solution: Run npx convex dev first. The _generated folder must exist.
+
+Problem: "Not authenticated" errors
+Solution: Check that Clerk keys are correctly set in .env.local
+
+Problem: Episode generation fails
+Solution:
+- Verify AI API keys are set: npx convex env list
+- Check Convex logs for detailed error messages
+- Ensure you have credits/quota in OpenAI and ElevenLabs accounts
+
+Problem: No news sources in onboarding
+Solution: Run the seedNewsSources mutation in Convex dashboard
+
+Problem: Clerk webhook not working
+Solution:
+- Make sure webhook URL uses your Convex deployment URL
+- Check that events user.created and user.updated are selected
+
+Problem: Convex functions not deploying
+Solution: Make sure npx convex dev is running in a separate terminal
+
+================================================================================
+                    OPTIONAL: POLAR PAYMENT SETUP
+================================================================================
+
+If you want to enable Pro subscriptions:
+
+1. Create Polar account: https://polar.sh
+2. Create a product for "PodcastDaily Pro" at $9.99/month
+3. Set up webhook:
+   - URL: https://YOUR-CONVEX-DEPLOYMENT.convex.site/polar-webhook
+   - Events: subscription.created, subscription.updated
+4. Add Polar keys to .env.local:
+   NEXT_PUBLIC_POLAR_ACCESS_TOKEN=polar_at_YOUR_KEY
+
+Note: This is optional. App works without payments (free tier only).
+
+================================================================================
+                    DEPLOYMENT TO PRODUCTION
+================================================================================
+
+When you're ready to deploy:
+
+1. Deploy Convex to production:
+   npx convex deploy --prod
+
+2. Deploy Next.js to Vercel:
+   vercel --prod
+
+3. Update webhooks with production URLs
+4. Set production environment variables in Vercel dashboard
+
+See README.md for detailed deployment instructions.
+
+================================================================================
+                    SUMMARY CHECKLIST
+================================================================================
+
+Before running the app, make sure you have:
+
+[  ] Node.js 20+ installed
+[  ] Cloned the repository
+[  ] Run npm install
+[  ] Run npx convex dev (and it's still running)
+[  ] Created Clerk account and application
+[  ] Added Clerk keys to .env.local
+[  ] Set up Clerk webhook
+[  ] Created OpenAI account and API key
+[  ] Created ElevenLabs account and API key
+[  ] Set AI keys with npx convex env set commands
+[  ] Run seedNewsSources mutation
+[  ] Started dev server with npm run dev
+[  ] Tested signup and onboarding
+[  ] Generated first podcast episode
+
+================================================================================
+                    NEED HELP?
+================================================================================
+
+- Check README.md for detailed documentation
+- View Convex logs in dashboard for backend errors
+- Check browser console for frontend errors
+- Review projectplan.md for implementation details
+
+GitHub Repository: https://github.com/venkat-the-coder/podcast-daily
+
+================================================================================
+                    END OF SETUP INSTRUCTIONS
+================================================================================
