@@ -1,11 +1,12 @@
 import { v } from "convex/values";
-import { mutation, query, action, internalMutation, internalQuery } from "./_generated/server";
+import { mutation, query, action, internalMutation, internalQuery, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
-// Create new episode (orchestrator)
+// Create new episode (orchestrator) - Public API
 export const createEpisode = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<Id<"episodes">> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
@@ -16,20 +17,31 @@ export const createEpisode = action({
 
     if (!user) throw new Error("User not found");
 
+    // Call internal action
+    return await ctx.runAction(internal.episodes.createEpisodeInternal, {
+      userId: user._id,
+    });
+  },
+});
+
+// Internal: Create new episode (orchestrator)
+export const createEpisodeInternal = internalAction({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args): Promise<Id<"episodes">> => {
     // Check rate limits
     await ctx.runMutation(internal.episodes.checkRateLimit, {
-      userId: user._id,
+      userId: args.userId,
     });
 
     // 1. Create pending episode
     const episodeId = await ctx.runMutation(internal.episodes.createPendingEpisode, {
-      userId: user._id,
+      userId: args.userId,
     });
 
     try {
       // 2. Fetch RSS feeds
       const articles = await ctx.runAction(internal.ai.fetchRssFeeds.fetchUserFeeds, {
-        userId: user._id,
+        userId: args.userId,
       });
 
       if (articles.length === 0) {
@@ -55,7 +67,7 @@ export const createEpisode = action({
       await ctx.runMutation(internal.episodes.updateEpisodeScript, {
         episodeId,
         script,
-        sourceArticles: articles.map((a) => ({
+        sourceArticles: articles.map((a: any) => ({
           title: a.title,
           url: a.url,
           source: a.source,
@@ -82,7 +94,7 @@ export const createEpisode = action({
 
       // 7. Increment user's daily counter
       await ctx.runMutation(internal.users.incrementDailyEpisodeCount, {
-        userId: user._id,
+        userId: args.userId,
       });
 
       return episodeId;
@@ -241,6 +253,51 @@ export const updateEpisodeAudio = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.episodeId, {
       audioFileId: args.audioFileId,
+    });
+  },
+});
+
+// Delete episode
+export const deleteEpisode = mutation({
+  args: {
+    episodeId: v.id("episodes"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    // Get the episode to verify ownership
+    const episode = await ctx.db.get(args.episodeId);
+    if (!episode) throw new Error("Episode not found");
+
+    // Get current user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    // Verify the episode belongs to this user
+    if (episode.userId !== user._id) {
+      throw new Error("You can only delete your own episodes");
+    }
+
+    // Delete the audio file from storage if it exists
+    if (episode.audioFileId) {
+      await ctx.storage.delete(episode.audioFileId);
+    }
+
+    // Delete the episode
+    await ctx.db.delete(args.episodeId);
+
+    // Add audit log
+    await ctx.db.insert("auditLog", {
+      userId: user._id,
+      action: "episode_deleted",
+      resource: "episodes",
+      resourceId: args.episodeId,
+      timestamp: Date.now(),
     });
   },
 });

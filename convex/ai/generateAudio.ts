@@ -1,3 +1,5 @@
+"use node";
+
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
@@ -19,17 +21,33 @@ export const generateAudio = internalAction({
       // Generate audio stream
       const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
         text: args.script,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
+        modelId: "eleven_multilingual_v2",
+        voiceSettings: {
           stability: 0.5,
-          similarity_boost: 0.75,
+          similarityBoost: 0.75,
         },
       });
 
       // Convert stream to buffer
       const chunks: Uint8Array[] = [];
-      for await (const chunk of audioStream) {
-        chunks.push(chunk);
+
+      // Handle ReadableStream properly
+      if (audioStream instanceof ReadableStream) {
+        const reader = audioStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) chunks.push(value);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      } else {
+        // Fallback for async iterables
+        for await (const chunk of audioStream as any) {
+          chunks.push(chunk);
+        }
       }
 
       const audioBuffer = Buffer.concat(chunks);

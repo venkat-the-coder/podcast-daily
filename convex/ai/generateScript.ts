@@ -1,6 +1,8 @@
+"use node";
+
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const generatePodcastScript = internalAction({
   args: {
@@ -15,9 +17,8 @@ export const generatePodcastScript = internalAction({
     ),
   },
   handler: async (ctx, args) => {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Prepare article summaries for context
     const articleSummaries = args.articles
@@ -30,7 +31,7 @@ Content: ${article.content.substring(0, 500)}...
       })
       .join("\n\n");
 
-    const systemPrompt = `You are a professional podcast scriptwriter. Create an engaging, conversational 5-minute podcast script that summarizes today's news.
+    const prompt = `You are a professional podcast scriptwriter. Create an engaging, conversational 5-minute podcast script that summarizes today's news.
 
 Guidelines:
 - Write in a natural, conversational tone as if a single narrator is speaking
@@ -42,33 +43,25 @@ Guidelines:
 - Avoid: Lists, bullet points, or overly formal language
 - Style: Informative yet accessible, professional yet friendly
 
-DO NOT include any stage directions, speaker labels, or formatting markers. Just write the spoken script.`;
+DO NOT include any stage directions, speaker labels, or formatting markers. Just write the spoken script.
 
-    const userPrompt = `Based on these news articles from today, create a 5-minute podcast script:
+Based on these news articles from today, create a 5-minute podcast script:
 
 ${articleSummaries}
 
 Remember: This is a single-narrator podcast. Write natural, flowing speech that sounds good when read aloud.`;
 
     try {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      });
-
-      const script = completion.choices[0]?.message?.content || "";
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const script = response.text();
 
       return {
         script,
-        tokensUsed: completion.usage?.total_tokens || 0,
+        tokensUsed: 0, // Gemini doesn't provide token count in the same way
       };
     } catch (error) {
-      console.error("OpenAI error:", error);
+      console.error("Gemini AI error:", error);
       throw new Error("Failed to generate podcast script");
     }
   },

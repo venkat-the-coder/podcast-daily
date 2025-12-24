@@ -38,7 +38,7 @@ This will install all required packages including:
 - Next.js, React, TypeScript
 - Convex (backend)
 - Clerk (authentication)
-- OpenAI, ElevenLabs (AI services)
+- Google Gemini, ElevenLabs (AI services)
 - Tailwind CSS (styling)
 - And all other dependencies
 
@@ -123,15 +123,15 @@ Expected result:
                     STEP 5: SET UP AI SERVICE KEYS
 ================================================================================
 
-You need accounts and API keys from OpenAI and ElevenLabs.
+You need accounts and API keys from Google Gemini and ElevenLabs.
 
-5.1 OpenAI Setup
-    - Go to: https://platform.openai.com
-    - Sign up or log in
-    - Go to: API Keys section
-    - Click "Create new secret key"
-    - Copy the key (starts with sk-)
-    - IMPORTANT: Store it safely, you can't see it again!
+5.1 Google Gemini Setup
+    - Go to: https://aistudio.google.com/app/apikey
+    - Sign in with your Google account
+    - Click "Create API Key"
+    - Select "Create API key in new project" (or choose existing project)
+    - Copy the API key
+    - IMPORTANT: Store it safely!
 
 5.2 ElevenLabs Setup
     - Go to: https://elevenlabs.io
@@ -144,14 +144,14 @@ You need accounts and API keys from OpenAI and ElevenLabs.
 5.3 Add AI Keys to Convex Environment
     Run these commands (replace with your actual keys):
 
-    npx convex env set OPENAI_API_KEY sk-YOUR_OPENAI_KEY
+    npx convex env set GEMINI_API_KEY YOUR_GEMINI_API_KEY
     npx convex env set ELEVENLABS_API_KEY YOUR_ELEVENLABS_KEY
     npx convex env set ELEVENLABS_VOICE_ID YOUR_VOICE_ID
 
     NOTE: These are stored securely in Convex, NOT in .env.local
 
 Expected result:
-- You'll see "Set OPENAI_API_KEY" confirmation messages
+- You'll see "Set GEMINI_API_KEY" confirmation messages
 - Keys are now available to your Convex functions
 
 ================================================================================
@@ -237,7 +237,7 @@ Problem: Episode generation fails
 Solution:
 - Verify AI API keys are set: npx convex env list
 - Check Convex logs for detailed error messages
-- Ensure you have credits/quota in OpenAI and ElevenLabs accounts
+- Ensure you have credits/quota in Google Gemini and ElevenLabs accounts
 
 Problem: No news sources in onboarding
 Solution: Run the seedNewsSources mutation in Convex dashboard
@@ -296,7 +296,7 @@ Before running the app, make sure you have:
 [  ] Created Clerk account and application
 [  ] Added Clerk keys to .env.local
 [  ] Set up Clerk webhook
-[  ] Created OpenAI account and API key
+[  ] Created Google Gemini account and API key
 [  ] Created ElevenLabs account and API key
 [  ] Set AI keys with npx convex env set commands
 [  ] Run seedNewsSources mutation

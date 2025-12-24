@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 
 // Create or update user from Clerk webhook
 export const syncUserFromClerk = internalMutation({
@@ -70,7 +70,7 @@ export const getCurrentUser = query({
 });
 
 // Internal query to get user by Clerk ID
-export const getUserByClerkId = query({
+export const getUserByClerkId = internalQuery({
   args: { clerkUserId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -126,5 +126,93 @@ export const incrementDailyEpisodeCount = internalMutation({
       episodesGeneratedToday: user.episodesGeneratedToday + 1,
       lastEpisodeGeneratedAt: Date.now(),
     });
+  },
+});
+
+// TESTING ONLY: Upgrade user to Pro by email
+export const upgradeToProForTesting = mutation({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email))
+      .first();
+
+    if (!user) {
+      throw new Error(`User not found with email: ${args.email}`);
+    }
+
+    await ctx.db.patch(user._id, {
+      subscriptionTier: "pro",
+      subscriptionStatus: "active",
+    });
+
+    await ctx.db.insert("auditLog", {
+      userId: user._id,
+      action: "subscription_upgraded_testing",
+      resource: "users",
+      resourceId: user._id,
+      metadata: {
+        tier: "pro",
+        status: "active",
+        email: args.email,
+      },
+      timestamp: Date.now(),
+    });
+
+    return {
+      success: true,
+      tier: "pro",
+      user: {
+        email: user.email,
+        name: user.name,
+      }
+    };
+  },
+});
+
+// TESTING ONLY: Downgrade user to Free by email
+export const downgradeToFreeForTesting = mutation({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email))
+      .first();
+
+    if (!user) {
+      throw new Error(`User not found with email: ${args.email}`);
+    }
+
+    await ctx.db.patch(user._id, {
+      subscriptionTier: "free",
+      subscriptionStatus: "active",
+    });
+
+    await ctx.db.insert("auditLog", {
+      userId: user._id,
+      action: "subscription_downgraded_testing",
+      resource: "users",
+      resourceId: user._id,
+      metadata: {
+        tier: "free",
+        status: "active",
+        email: args.email,
+      },
+      timestamp: Date.now(),
+    });
+
+    return {
+      success: true,
+      tier: "free",
+      user: {
+        email: user.email,
+        name: user.name,
+      }
+    };
   },
 });

@@ -1,15 +1,25 @@
+"use node";
+
 import { v } from "convex/values";
 import { action, internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import Parser from "rss-parser";
 
+interface Article {
+  title: string;
+  url: string;
+  content: string;
+  publishedAt: string;
+  source: string;
+}
+
 // Fetch RSS feed (runs on Convex backend)
-export const fetchRssFeed = action({
+export const fetchRssFeed = internalAction({
   args: {
     rssUrl: v.string(),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<any[]> => {
+  handler: async (ctx, args): Promise<Article[]> => {
     const parser = new Parser({
       timeout: 10000, // 10 second timeout
       headers: {
@@ -40,19 +50,19 @@ export const fetchUserFeeds = internalAction({
   args: {
     userId: v.id("users"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<Article[]> => {
     // Get user's sources
     const userSources = await ctx.runQuery(internal.sources.getUserSourcesInternal, {
       userId: args.userId,
     });
 
-    const allArticles = [];
+    const allArticles: Article[] = [];
 
     // Fetch each RSS feed
     for (const source of userSources) {
       if (!source) continue;
 
-      const articles = await ctx.runAction(internal.ai.fetchRssFeeds.fetchRssFeed, {
+      const articles: Article[] = await ctx.runAction(internal.ai.fetchRssFeeds.fetchRssFeed, {
         rssUrl: source.rssUrl,
         limit: 3,
       });

@@ -3,21 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-white transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transform hover:scale-105 active:scale-95",
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white hover:bg-blue-700",
-        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
-        ghost: "hover:bg-gray-100 hover:text-gray-900",
-        outline:
-          "border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900",
+        default: "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-blue-700",
+        secondary: "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 hover:from-gray-200 hover:to-gray-300 shadow-md hover:shadow-lg",
+        ghost: "hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:text-purple-700",
+        outline: "border-2 border-purple-600 bg-white text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 shadow-sm hover:shadow-md",
+        gradient: "bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white shadow-xl hover:shadow-2xl hover:brightness-110 animate-gradient",
+        success: "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-green-600 hover:to-emerald-700",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-11 px-6 py-2 rounded-xl",
+        sm: "h-9 px-4 rounded-lg text-xs",
+        lg: "h-14 px-10 rounded-2xl text-base",
+        icon: "h-11 w-11 rounded-xl",
       },
     },
     defaultVariants: {

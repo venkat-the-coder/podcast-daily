@@ -34,7 +34,7 @@ export const getPendingJobs = internalQuery({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("generationQueue")
-      .withIndex("by_scheduled_time", (q) =>
+      .withIndex("by_status", (q) =>
         q.eq("status", "pending")
       )
       .filter((q) => q.lte(q.field("scheduledFor"), args.beforeTimestamp))

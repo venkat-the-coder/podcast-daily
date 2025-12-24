@@ -23,7 +23,7 @@ export const processScheduledGenerations = internalAction({
         });
 
         // Generate episode
-        const episodeId = await ctx.runAction(internal.episodes.createEpisode, {
+        const episodeId = await ctx.runAction(internal.episodes.createEpisodeInternal, {
           userId: job.userId,
         });
 
